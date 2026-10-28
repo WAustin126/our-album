@@ -645,3 +645,26 @@
   .m-track-state { font-size: 10px; letter-spacing: 0.08em; color: rgba(255, 246, 238, 0.5); }
   .m-track.is-missing { opacity: 0.55; }
 }
+/* ---- 照片被"取出来"后的放回按钮 ---- */
+.m-pin-restore { display: none !important; }
+@media (max-width: 820px) {
+  .m-pin-restore {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--m-dock-h) + var(--m-lyric-h) + var(--m-gap) + 10px);
+    transform: translateX(-50%);
+    z-index: 69;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 214, 170, 0.5);
+    background: linear-gradient(135deg, rgba(255, 233, 201, 0.95), rgba(255, 183, 207, 0.9));
+    color: #24160f;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  }
+  .m-pin-restore[hidden] { display: none !important; }
+}

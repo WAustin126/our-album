@@ -446,6 +446,29 @@
   new MutationObserver(syncModalLock).observe(photoModal, { attributes: true, attributeFilter: ["class"] });
   syncModalLock();
 
+  /* ---------------- 照片被取出来后，给一个明确的"放回" ---------------- */
+  const pinRestore = $("mPinRestore");
+  function syncPinChip() {
+    if (!pinRestore) return;
+    const count = typeof pinnedCards !== "undefined" && pinnedCards ? pinnedCards.size : 0;
+    const show = isMobile() && count > 0;
+    pinRestore.hidden = !show;
+    pinRestore.textContent = count > 1 ? `↺ 放回相册（${count} 张）` : "↺ 放回相册";
+  }
+  if (pinRestore) {
+    pinRestore.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (typeof pinnedCards !== "undefined" && pinnedCards) pinnedCards.clear();
+      renderLayout(performance.now(), true);
+      showSubtitle("照片已归位。", "归位", 1400);
+      syncPinChip();
+    });
+  }
+  document.addEventListener("pointerup", () => setTimeout(syncPinChip, 60), { passive: true });
+  document.addEventListener("click", () => setTimeout(syncPinChip, 60), { passive: true });
+  setInterval(syncPinChip, 700);
+  syncPinChip();
+
   /* ---------------- 图片失败自动重试（别让一张图永久空白） ---------------- */
   document.addEventListener(
     "error",
