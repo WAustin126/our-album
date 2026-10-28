@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>相册后台</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="login-wrap" id="loginView">
+    <form class="login-card" id="loginForm">
+      <p class="eyebrow">PRIVATE STUDIO</p>
+      <h1>相册后台</h1>
+      <label>邮箱<input id="email" type="email" autocomplete="username" required /></label>
+      <label>密码<input id="password" type="password" autocomplete="current-password" required /></label>
+      <button class="primary" id="loginBtn" type="submit">登录</button>
+      <p class="error" id="loginError"></p>
+    </form>
+  </div>
+
+  <div id="appView" hidden>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">STUDIO</p>
+        <h1>相册后台</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost" href="./index.html" target="_blank" rel="noopener">看访客页</a>
+        <button class="ghost" id="logoutBtn" type="button">退出</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="site" class="active">站点</button>
+      <button type="button" data-tab="photos">照片</button>
+      <button type="button" data-tab="timeline">时间轴</button>
+      <button type="button" data-tab="letter">信</button>
+      <button type="button" data-tab="music">音乐</button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="tab-site">
+        <div class="card">
+          <h2>站点设置</h2>
+          <div class="row grid-2">
+            <label>顶部品牌名<input id="s-brand" placeholder="MANGO PUDDING" /></label>
+            <label>浏览器标题<input id="s-title" placeholder="送给你的云端相册" /></label>
+            <label>在一起开始时间<input id="s-love" type="datetime-local" /></label>
+            <label>礼物密码<input id="s-pass" inputmode="numeric" /></label>
+            <label>信的标题<input id="s-letter-title" /></label>
+            <label>信的署名<input id="s-letter-sign" /></label>
+          </div>
+          <div class="actions"><button class="btn gold" id="saveSite" type="button">保存站点设置</button></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-photos">
+        <div class="card">
+          <h2>添加照片</h2>
+          <p class="hint">点击或拖进来，可多选。浏览器会先压到长边 1600px 再传，省流量也更快。</p>
+          <label class="dropzone" id="photoDrop">
+            <input type="file" id="photoInput" accept="image/*" multiple />
+            <span>点击选择 / 拖拽照片到这里</span>
+            <span class="mini">jpg · png · webp</span>
+          </label>
+          <div class="progress" id="photoProgress"><i></i></div>
+        </div>
+        <div class="card">
+          <h2>照片列表 <span class="mini" id="photoCount"></span></h2>
+          <div id="photoList"></div>
+          <p class="hint">文字改完离开输入框就自动保存；↑↓ 立即改变顺序。</p>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-timeline">
+        <div class="card">
+          <h2>时间轴</h2>
+          <p class="hint">访客页点「时间轴」看到的就是这些卡片。</p>
+          <div id="timelineList"></div>
+          <div class="actions">
+            <button class="btn" id="addTimeline" type="button">+ 添加一条</button>
+            <button class="btn gold" id="saveTimeline" type="button">保存时间轴</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-letter">
+        <div class="card">
+          <h2>信</h2>
+          <p class="hint">一段一段写，访客页会逐段打字显示。最后一段勾「署名」，会用手写体。</p>
+          <div id="letterList"></div>
+          <div class="actions">
+            <button class="btn" id="addLetter" type="button">+ 添加一段</button>
+            <button class="btn gold" id="saveLetter" type="button">保存信</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-music">
+        <div class="card">
+          <h2>添加音乐</h2>
+          <label class="dropzone" id="audioDrop">
+            <input type="file" id="audioInput" accept="audio/*" />
+            <span>点击选择 / 拖入一首歌</span>
+            <span class="mini">mp3 / m4a / wav，单个 20MB 内</span>
+          </label>
+          <div class="progress" id="audioProgress"><i></i></div>
+        </div>
+        <div class="card">
+          <h2>播放列表</h2>
+          <div id="musicList"></div>
+          <p class="hint">歌词每行写「00:12 这一句」；不写时间也可以，会按 4 秒一行自动排。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/supabase.js"></script>
+  <script src="js/config/supabase.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
