@@ -1871,21 +1871,17 @@ updateDragTip();
    如果文件名不是 1.mp3，也会尝试常见中文文件名。
 */
 function decorateSongsWithAudioCandidates() {
+  // 每首歌尊重自己配置的 src（后台/lyrics.js 写什么就播什么），
+  // 只为《予你》兼容几种常见文件名。
   if (!CONFIG.songs || !Array.isArray(CONFIG.songs)) return;
 
-  const candidates = [
-    ["music/1.mp3", "music/队长 - 予你.mp3", "music/队长 - 予你(1).mp3", "music/予你.mp3"],
-    ["music/2.mp3", "music/汪苏泷 - 像晴天像雨天.mp3", "music/汪苏泷 - 像晴天像雨天(1).mp3", "music/像晴天像雨天.mp3"],
-    ["music/3.mp3", "music/长岛加冰.mp3", "music/21. - 长岛加冰.mp3", "music/21. - 长岛加冰(1).mp3"],
-    ["music/4.mp3", "music/朗杰 - bumola.mp3", "music/郎杰 - Bumola.mp3", "music/郎杰 - Bumola(1).mp3", "music/Bumola.mp3", "music/bumola.mp3"],
-    ["music/5.mp3", "music/卓沅,Chris James - Not Angry (夏夜告别).mp3", "music/卓沅,Chris James - Not Angry (夏夜告别)(1).mp3", "music/Not Angry.mp3", "music/not angry.mp3"]
-  ];
-
-  CONFIG.songs = CONFIG.songs.map((song, index) => ({
-    ...song,
-    src: candidates[index]?.[0] || song.src,
-    candidates: candidates[index] || [song.src]
-  }));
+  CONFIG.songs = CONFIG.songs.map((song) => {
+    const own = [song.src];
+    const extra = /予你/.test(song.title || "")
+      ? ["music/yuni.mp3", "music/予你.mp3", "music/队长 - 予你.mp3"]
+      : [];
+    return { ...song, candidates: Array.from(new Set([...own, ...extra].filter(Boolean))) };
+  });
 }
 
 function getSongCandidates(index) {

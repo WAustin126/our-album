@@ -218,6 +218,16 @@
     </div>
   </div>
 
+  <div class="m-sheet" id="musicSheet" aria-hidden="true">
+    <div class="m-sheet-backdrop" data-close-sheet></div>
+    <div class="m-sheet-card" role="dialog" aria-label="选择歌曲">
+      <p class="m-sheet-title">现在播放</p>
+      <button type="button" class="m-play-toggle" id="mPlayToggle">▶ 播放</button>
+      <div class="m-tracks" id="mTracks"></div>
+      <button type="button" class="m-sheet-close" data-close-sheet>收起</button>
+    </div>
+  </div>
+
   <audio id="bgm" loop preload="none"></audio>
   <script src="vendor/supabase.js"></script>
   <script src="js/config/supabase.js"></script>

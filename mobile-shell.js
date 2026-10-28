@@ -222,9 +222,10 @@
     sheet.setAttribute("aria-hidden", "false");
   }
   function closeSheet() {
-    if (!sheet) return;
-    sheet.classList.remove("show");
-    sheet.setAttribute("aria-hidden", "true");
+    document.querySelectorAll(".m-sheet.show").forEach((el) => {
+      el.classList.remove("show");
+      el.setAttribute("aria-hidden", "true");
+    });
   }
 
   sheetButtons.forEach((btn) => {
@@ -252,15 +253,104 @@
   }
 
   /* ---------------- 音乐 ---------------- */
+  const musicSheet = $("musicSheet");
+  const mTracks = $("mTracks");
+  const mPlayToggle = $("mPlayToggle");
+  let missingTracks = new Set();
+
   function syncMusicBtn() {
-    if (!musicBtn) return;
-    const playing = !bgm.paused;
-    musicBtn.classList.toggle("is-on", playing);
-    const label = musicBtn.querySelector("em");
-    if (label) label.textContent = playing ? "播放中" : "音乐";
+    if (musicBtn) {
+      const playing = !bgm.paused;
+      musicBtn.classList.toggle("is-on", playing);
+      const label = musicBtn.querySelector("em");
+      if (label) label.textContent = playing ? "播放中" : "音乐";
+    }
+    if (mPlayToggle) {
+      const playing = !bgm.paused;
+      mPlayToggle.textContent = playing ? "❚❚ 暂停" : "▶ 播放";
+      mPlayToggle.classList.toggle("is-playing", playing);
+    }
+    renderTracks();
+  }
+
+  function renderTracks() {
+    if (!mTracks) return;
+    const songs = (typeof CONFIG !== "undefined" && CONFIG.songs) || [];
+    mTracks.innerHTML = songs
+      .map((song, index) => {
+        const on = index === activeSongIndex;
+        const missing = missingTracks.has(index);
+        return `<button type="button" class="m-track ${on ? "is-on" : ""} ${missing ? "is-missing" : ""}" data-track="${index}">
+          <span class="m-track-index">${String(index + 1).padStart(2, "0")}</span>
+          <span class="m-track-title">${song.title || "未命名"}</span>
+          <span class="m-track-state">${missing ? "文件缺失" : on && !bgm.paused ? "播放中" : ""}</span>
+        </button>`;
+      })
+      .join("");
+  }
+
+  function showSheetEl(el) {
+    if (!el) return;
+    el.classList.add("show");
+    el.setAttribute("aria-hidden", "false");
+  }
+  function hideSheetEl(el) {
+    if (!el) return;
+    el.classList.remove("show");
+    el.setAttribute("aria-hidden", "true");
+  }
+  function closeAllSheets() {
+    hideSheetEl(sheet);
+    hideSheetEl(musicSheet);
+  }
+
+  if (mTracks) {
+    mTracks.addEventListener("click", async (event) => {
+      const btn = event.target.closest("[data-track]");
+      if (!btn) return;
+      const index = Number(btn.dataset.track);
+      hideSheetEl(musicSheet);
+      const ok = await unlockAudioAndPlay(index);
+      if (!ok) {
+        missingTracks.add(index);
+        showSubtitle("这首歌的文件还没放进来。", "音乐", 2600);
+      }
+      syncMusicBtn();
+    });
+  }
+  if (mPlayToggle) {
+    mPlayToggle.addEventListener("click", async () => {
+      if (!bgm.paused) {
+        bgm.pause();
+        syncMusicBtn();
+        return;
+      }
+      const ok = await unlockAudioAndPlay(activeSongIndex);
+      if (!ok) showSubtitle("这首歌的文件还没放进来。", "音乐", 2600);
+      syncMusicBtn();
+    });
   }
   bgm.addEventListener("play", syncMusicBtn);
   bgm.addEventListener("pause", syncMusicBtn);
+  bgm.addEventListener("error", () => {
+    missingTracks.add(activeSongIndex);
+    renderTracks();
+    // 默认那首文件缺失时，先换上下一首能播的，别让整站没声音
+    const songs = (typeof CONFIG !== "undefined" && CONFIG.songs) || [];
+    if (songs.length > 1 && !bgm.dataset.fellBack) {
+      const next = (activeSongIndex + 1) % songs.length;
+      if (!missingTracks.has(next)) {
+        bgm.dataset.fellBack = "1";
+        setTimeout(() => {
+          unlockAudioAndPlay(next)
+            .then((ok) => {
+              if (ok) showSubtitle("《予你》的音频还没放进来，先播别的。", "音乐", 3200);
+            })
+            .catch(() => {});
+        }, 260);
+      }
+    }
+  });
   syncMusicBtn();
 
   /* ---------------- 工具条 ---------------- */
@@ -270,27 +360,24 @@
       if (!btn) return;
       const act = btn.dataset.act;
       if (act === "layout") {
+        hideSheetEl(musicSheet);
         openSheet();
         return;
       }
       if (act === "timeline") {
-        closeSheet();
+        closeAllSheets();
         openTimeline();
         return;
       }
       if (act === "letter") {
-        closeSheet();
+        closeAllSheets();
         openLetter();
         return;
       }
       if (act === "music") {
-        if (!bgm.paused) {
-          bgm.pause();
-          return;
-        }
-        const ok = await unlockAudioAndPlay(activeSongIndex);
-        if (!ok) showSubtitle("音乐没打开，检查一下 music 文件夹。", "声音", 2400);
-        syncMusicBtn();
+        hideSheetEl(sheet);
+        renderTracks();
+        showSheetEl(musicSheet);
       }
     });
   }
