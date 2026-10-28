@@ -12,6 +12,33 @@
   const statusDays = $("mStatusDays");
   const dock = $("mDock");
   const sheet = $("mSheet");
+
+  /* ---------------- 图片预载（页面一打开就取，别等相册建好） ---------------- */
+  (function preloadPhotos() {
+    const urls = ((typeof CONFIG !== "undefined" && CONFIG.photos) || []).map((p) => p.src);
+    if (!urls.length) return;
+    const bar = $("progressBar");
+    let done = 0;
+    const bump = () => {
+      done++;
+      if (bar) bar.style.width = Math.round((done / urls.length) * 100) + "%";
+    };
+    urls.forEach((src) => {
+      const im = new Image();
+      im.decoding = "async";
+      im.onload = bump;
+      im.onerror = () => {
+        // 冷启动偶尔会 404，隔一会儿再取一次
+        setTimeout(() => {
+          const retry = new Image();
+          retry.onload = bump;
+          retry.onerror = bump;
+          retry.src = src + "?retry=1";
+        }, 800);
+      };
+      im.src = src;
+    });
+  })();
   const sheetButtons = Array.from(document.querySelectorAll(".m-modes button"));
   const lyricOverlay = $("lyricOverlay");
   const lyricMin = $("lyricMin");
@@ -316,6 +343,25 @@
       }
     },
     { passive: true }
+  );
+
+  /* ---------------- 图片失败自动重试（别让一张图永久空白） ---------------- */
+  document.addEventListener(
+    "error",
+    (event) => {
+      const img = event.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      if (!img.closest("#carousel") && !img.closest(".mobile-gallery") && !img.closest(".modal")) return;
+      const tries = Number(img.dataset.retry || 0);
+      if (tries >= 2) return;
+      img.dataset.retry = String(tries + 1);
+      const base = (img.getAttribute("src") || "").split("?")[0];
+      if (!base) return;
+      setTimeout(() => {
+        img.src = base + "?r=" + Date.now();
+      }, 700 * (tries + 1));
+    },
+    true
   );
 
   /* ---------------- 双击不再切布局 ---------------- */
