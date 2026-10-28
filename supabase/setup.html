@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Supabase 初始化 · 复制粘贴</title>
+<style>
+  :root { --gold:#ffd7a8; --line:rgba(255,255,255,.12); }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:28px 18px 80px; background:#0b0a12; color:#f4eee6;
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif; line-height:1.75; }
+  main { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .sub { color: rgba(244,238,230,.6); font-size: 14px; margin: 0 0 22px; }
+  .steps { padding: 16px 18px; border:1px solid var(--line); border-radius:16px;
+    background: rgba(255,255,255,.04); margin-bottom: 20px; font-size: 14px; }
+  .steps ol { margin: 8px 0 0; padding-left: 20px; }
+  .steps li { margin-bottom: 8px; }
+  code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+  a { color: #ffd7a8; }
+  .card { border:1px solid var(--line); border-radius:16px; background: rgba(255,255,255,.035); margin-bottom: 20px; overflow:hidden; }
+  .card header { display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding: 12px 16px; border-bottom:1px solid var(--line); position: sticky; top: 0;
+    background: #14121c; z-index: 2; }
+  .card h2 { font-size: 15px; margin:0; }
+  button { cursor:pointer; border:1px solid rgba(255,215,168,.4); background:rgba(255,215,168,.14);
+    color:#ffe9c9; padding: 8px 16px; border-radius:999px; font-size: 13px; }
+  button.done { border-color: rgba(140,255,190,.45); background: rgba(140,255,190,.15); color:#c8ffe0; }
+  pre { margin:0; padding:16px; max-height: 420px; overflow:auto; font-size: 12px; line-height:1.6;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre; }
+  .tip { font-size: 13px; color:#ffd7a8; margin: 0 0 18px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Supabase 初始化</h1>
+  <p class="sub">两段 SQL，按顺序复制到 Supabase 的 SQL Editor 里执行。复制按钮会一次性拷走整段。</p>
+
+  <div class="steps">
+    <strong>步骤</strong>
+    <ol>
+      <li>打开 <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a> → New project，Region 选 <strong>Singapore</strong>，等 2 分钟。</li>
+      <li>左侧 <strong>SQL Editor</strong> → <strong>New query</strong>，粘第一段。</li>
+      <li><strong>把第一段里的 <code>__OWNER_EMAIL__</code> 改成你自己的邮箱</strong>，再点 Run。</li>
+      <li>再 New query，粘第二段并 Run。</li>
+      <li>Authentication → Users → Add user：<strong>用同一个邮箱</strong>建管理员账号，勾 Auto Confirm。</li>
+      <li>Authentication → Providers → Email：关掉 <strong>Allow new users to sign up</strong>。</li>
+    </ol>
+  </div>
+
+  <p class="tip">⚠️ 第 3 步最容易被跳过：邮箱不改，你登录后台会看到数据但改不动。</p>
+
+  <section class="card">
+    <header><h2>① 建表 + 权限（schema.sql）</h2><button data-target="sql1">复制</button></header>
+    <pre id="sql1">-- =====================================================================
+--  云端相册 · Supabase 初始化脚本
+--  用法：Supabase 控制台 → SQL Editor → New query → 整段粘贴 → Run
+--  先把下面这行的邮箱改成你的管理员邮箱（就是你要用来登录后台的邮箱）
+-- =====================================================================
+
+-- ① 管理员身份判定：只有这个邮箱能写，其他人一律只读
+create or replace function public.is_owner()
+returns boolean
+language sql
+stable
+as $$
+  select coalesce(auth.jwt() -&gt;&gt; &#x27;email&#x27;, &#x27;&#x27;) = &#x27;__OWNER_EMAIL__&#x27;;
+$$;
+
+-- ② 站点设置（只有一行）
+create table if not exists public.site_settings (
+  id            int primary key default 1 check (id = 1),
+  brand         text default &#x27;MANGO PUDDING&#x27;,
+  site_title    text default &#x27;送给你的云端相册&#x27;,
+  love_start_at timestamptz default &#x27;2024-01-01T00:00:00+08:00&#x27;,
+  gift_password text default &#x27;520&#x27;,
+  letter_title  text default &#x27;写给你&#x27;,
+  letter_sign   text default &#x27;For You · Mango Pudding&#x27;,
+  updated_at    timestamptz default now()
+);
+insert into public.site_settings (id) values (1) on conflict (id) do nothing;
+
+-- ③ 照片
+create table if not exists public.photos (
+  id          uuid primary key default gen_random_uuid(),
+  url         text not null,
+  storage_path text,
+  title       text default &#x27;&#x27;,
+  caption     text default &#x27;&#x27;,
+  taken_on    date,
+  sticker     text default &#x27;&#x27;,
+  position    int default 0,
+  created_at  timestamptz default now()
+);
+
+-- ④ 时间轴
+create table if not exists public.timeline_items (
+  id          uuid primary key default gen_random_uuid(),
+  date_label  text default &#x27;&#x27;,
+  title       text not null default &#x27;&#x27;,
+  body        text default &#x27;&#x27;,
+  position    int default 0
+);
+
+-- ⑤ 信的段落
+create table if not exists public.letter_lines (
+  id        uuid primary key default gen_random_uuid(),
+  body      text not null default &#x27;&#x27;,
+  emphasis  boolean default false,
+  position  int default 0
+);
+
+-- ⑥ 音乐
+create table if not exists public.songs (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null default &#x27;&#x27;,
+  artist       text default &#x27;&#x27;,
+  url          text not null,
+  storage_path text,
+  lyrics       jsonb default &#x27;[]&#x27;::jsonb,
+  active       boolean default true,
+  position     int default 0
+);
+
+-- ⑦ 权限：所有人可读，只有管理员可写
+alter table public.site_settings  enable row level security;
+alter table public.photos         enable row level security;
+alter table public.timeline_items enable row level security;
+alter table public.letter_lines   enable row level security;
+alter table public.songs          enable row level security;
+
+drop policy if exists read_all on public.site_settings;
+drop policy if exists owner_write on public.site_settings;
+create policy read_all   on public.site_settings  for select using (true);
+create policy owner_write on public.site_settings for all to authenticated using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists read_all on public.photos;
+drop policy if exists owner_write on public.photos;
+create policy read_all   on public.photos  for select using (true);
+create policy owner_write on public.photos for all to authenticated using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists read_all on public.timeline_items;
+drop policy if exists owner_write on public.timeline_items;
+create policy read_all   on public.timeline_items  for select using (true);
+create policy owner_write on public.timeline_items for all to authenticated using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists read_all on public.letter_lines;
+drop policy if exists owner_write on public.letter_lines;
+create policy read_all   on public.letter_lines  for select using (true);
+create policy owner_write on public.letter_lines for all to authenticated using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists read_all on public.songs;
+drop policy if exists owner_write on public.songs;
+create policy read_all   on public.songs  for select using (true);
+create policy owner_write on public.songs for all to authenticated using (public.is_owner()) with check (public.is_owner());
+
+grant select on public.site_settings, public.photos, public.timeline_items, public.letter_lines, public.songs to anon, authenticated;
+grant insert, update, delete on public.site_settings, public.photos, public.timeline_items, public.letter_lines, public.songs to authenticated;
+
+-- ⑧ 存储桶：照片 + 音乐，公开可读、仅管理员可传
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (&#x27;album&#x27;, &#x27;album&#x27;, true, 26214400, array[&#x27;image/jpeg&#x27;,&#x27;image/png&#x27;,&#x27;image/webp&#x27;,&#x27;audio/mpeg&#x27;,&#x27;audio/mp4&#x27;,&#x27;audio/wav&#x27;])
+on conflict (id) do update set public = true, file_size_limit = 26214400;
+
+drop policy if exists album_read   on storage.objects;
+drop policy if exists album_write  on storage.objects;
+drop policy if exists album_update on storage.objects;
+drop policy if exists album_delete on storage.objects;
+
+create policy album_read   on storage.objects for select using (bucket_id = &#x27;album&#x27;);
+create policy album_write  on storage.objects for insert to authenticated with check (bucket_id = &#x27;album&#x27; and public.is_owner());
+create policy album_update on storage.objects for update to authenticated using (bucket_id = &#x27;album&#x27; and public.is_owner());
+create policy album_delete on storage.objects for delete to authenticated using (bucket_id = &#x27;album&#x27; and public.is_owner());
+
+-- ⑨ 完成。接下来去 Authentication → Users 手动建一个管理员账号
+--    （邮箱必须和第 ① 行填的一致），并关掉 Allow new users to sign up。
+</pre>
+  </section>
+
+  <section class="card">
+    <header><h2>② 填入现有内容（seed.sql）</h2><button data-target="sql2">复制</button></header>
+    <pre id="sql2">-- =====================================================================
+--  首次填充：把现在这 14 张照片、4 条时间轴、4 段信、3 首歌写进数据库
+--  这样后台一登录就能看到、直接改文字，不用重新上传一遍
+--  在 schema.sql 跑完之后再执行这一段
+-- =====================================================================
+
+-- 站点设置
+update public.site_settings set
+  brand = &#x27;MANGO PUDDING&#x27;,
+  site_title = &#x27;送给你的云端相册&#x27;,
+  love_start_at = &#x27;2024-01-01T00:00:00+08:00&#x27;,
+  gift_password = &#x27;520&#x27;,
+  letter_title = &#x27;写给你&#x27;,
+  letter_sign = &#x27;For You · Mango Pudding&#x27;,
+  updated_at = now()
+where id = 1;
+
+-- 照片（图片先指向仓库里已有的 14 张，之后你在后台换成上传的也可以）
+insert into public.photos (url, title, caption, position) values
+  (&#x27;photos/1.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 0),
+  (&#x27;photos/2.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 1),
+  (&#x27;photos/3.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 2),
+  (&#x27;photos/4.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 3),
+  (&#x27;photos/5.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 4),
+  (&#x27;photos/6.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 5),
+  (&#x27;photos/7.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 6),
+  (&#x27;photos/8.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 7),
+  (&#x27;photos/9.jpg&#x27;,  &#x27;&#x27;, &#x27;&#x27;, 8),
+  (&#x27;photos/10.jpg&#x27;, &#x27;&#x27;, &#x27;&#x27;, 9),
+  (&#x27;photos/11.jpg&#x27;, &#x27;&#x27;, &#x27;&#x27;, 10),
+  (&#x27;photos/12.jpg&#x27;, &#x27;&#x27;, &#x27;&#x27;, 11),
+  (&#x27;photos/13.jpg&#x27;, &#x27;&#x27;, &#x27;&#x27;, 12),
+  (&#x27;photos/14.jpg&#x27;, &#x27;&#x27;, &#x27;&#x27;, 13);
+
+-- 时间轴
+insert into public.timeline_items (date_label, title, body, position) values
+  (&#x27;01&#x27;, &#x27;第一次被认真保存&#x27;, &#x27;从某一张照片开始，普通的一天变成了可以反复翻看的记忆。&#x27;, 0),
+  (&#x27;02&#x27;, &#x27;一起吃过的饭&#x27;, &#x27;有些快乐很具体，可能就是一张桌子、两双筷子，还有一句没说完的话。&#x27;, 1),
+  (&#x27;03&#x27;, &#x27;一起走过的地方&#x27;, &#x27;地图上只是一个点，放进回忆里，就变成了一整段路。&#x27;, 2),
+  (&#x27;04&#x27;, &#x27;新的照片还没拍&#x27;, &#x27;这里先空着，等我们慢慢填。&#x27;, 3);
+
+-- 信
+insert into public.letter_lines (body, emphasis, position) values
+  (&#x27;我把这些照片放进一个网页里，不是因为它们拍得多完美，而是因为每一张背后，都有一个我想认真保存的你。&#x27;, false, 0),
+  (&#x27;真正想送出去的，从来不只是照片本身，而是那时候的风、光、说过的话，还有当时一起站在画面里的心情。&#x27;, false, 1),
+  (&#x27;如果你喜欢，这个网页以后还可以继续长大。新的照片、新的旅行、新的小事，都能慢慢加进来。&#x27;, false, 2),
+  (&#x27;故事还没写完，下一页留给我们。&#x27;, true, 3);
+
+-- 音乐（先用站点里现成的三首，之后可以在后台上传自己的）
+insert into public.songs (title, artist, url, lyrics, active, position) values
+  (&#x27;月光慢慢&#x27;, &#x27;&#x27;, &#x27;music/1.mp3&#x27;, &#x27;[{&quot;time&quot;:0,&quot;text&quot;:&quot;天色暗下来的时候，照片刚好亮起。&quot;},{&quot;time&quot;:9,&quot;text&quot;:&quot;慢一点也没关系，回忆本来就不赶时间。&quot;},{&quot;time&quot;:19,&quot;text&quot;:&quot;我们把普通的一天，过成了想收藏的那一页。&quot;},{&quot;time&quot;:30,&quot;text&quot;:&quot;你看，连风都在帮我们把画面吹得更轻。&quot;},{&quot;time&quot;:42,&quot;text&quot;:&quot;这一张留着，等以后想起来再看。&quot;},{&quot;time&quot;:54,&quot;text&quot;:&quot;不急着翻页，先多看一会儿。&quot;},{&quot;time&quot;:66,&quot;text&quot;:&quot;月光慢慢，落到你眼睛里。&quot;},{&quot;time&quot;:78,&quot;text&quot;:&quot;故事还长，这一页才刚刚开始。&quot;}]&#x27;::jsonb, true, 0),
+  (&#x27;潮汐与星&#x27;, &#x27;&#x27;, &#x27;music/2.mp3&#x27;, &#x27;[{&quot;time&quot;:0,&quot;text&quot;:&quot;像潮水，一次次回到同一片岸。&quot;},{&quot;time&quot;:10,&quot;text&quot;:&quot;那些没说出口的话，都藏在快门里。&quot;},{&quot;time&quot;:21,&quot;text&quot;:&quot;你笑的时候，整张照片都跟着亮了。&quot;},{&quot;time&quot;:33,&quot;text&quot;:&quot;我们把日子攒成星光，一颗一颗。&quot;},{&quot;time&quot;:45,&quot;text&quot;:&quot;有的瞬间很短，却值得反复播放。&quot;},{&quot;time&quot;:57,&quot;text&quot;:&quot;如果你也在看，那就正好。&quot;},{&quot;time&quot;:70,&quot;text&quot;:&quot;潮汐退去，星星还在。&quot;},{&quot;time&quot;:84,&quot;text&quot;:&quot;下一次见面，再多拍一点。&quot;}]&#x27;::jsonb, true, 1),
+  (&#x27;夜色慢拍&#x27;, &#x27;&#x27;, &#x27;music/3.wav&#x27;, &#x27;[{&quot;time&quot;:0,&quot;text&quot;:&quot;夜里的灯，比白天更会记事。&quot;},{&quot;time&quot;:11,&quot;text&quot;:&quot;我们走的那段路，现在还会在脑子里放一遍。&quot;},{&quot;time&quot;:23,&quot;text&quot;:&quot;有些开心不用很大声，安静地待着就好。&quot;},{&quot;time&quot;:36,&quot;text&quot;:&quot;这张不太清楚，但那时候的心情很清楚。&quot;},{&quot;time&quot;:49,&quot;text&quot;:&quot;把吵闹关掉，只剩旋律和呼吸。&quot;},{&quot;time&quot;:62,&quot;text&quot;:&quot;你看，照片里的我们一直在笑。&quot;},{&quot;time&quot;:76,&quot;text&quot;:&quot;再笑一次，给下一张留个位置。&quot;},{&quot;time&quot;:90,&quot;text&quot;:&quot;夜色慢拍，我们慢慢来。&quot;}]&#x27;::jsonb, true, 2);
+</pre>
+  </section>
+
+</main>
+<script>
+document.querySelectorAll('button[data-target]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    var text = document.getElementById(btn.dataset.target).innerText;
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    var old = btn.textContent;
+    btn.textContent = '已复制 ✓'; btn.classList.add('done');
+    setTimeout(function () { btn.textContent = old; btn.classList.remove('done'); }, 1800);
+  });
+});
+</script>
+</body>
+</html>
