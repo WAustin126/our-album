@@ -333,7 +333,7 @@
       const t = event.changedTouches[0];
       const dx = t.clientX - touchStartX;
       const dy = t.clientY - touchStartY;
-      if (Math.abs(dy) > 90 && Math.abs(dy) > Math.abs(dx) && dy > 0) {
+      if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) && dy > 0) {
         closePhoto();
         return;
       }
@@ -344,6 +344,20 @@
     },
     { passive: true }
   );
+
+  /* ---------------- 大图弹窗：底部返回按钮 + 锁住背后的相册 ---------------- */
+  const modalCloseBar = $("modalCloseBar");
+  if (modalCloseBar) {
+    modalCloseBar.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closePhoto();
+    });
+  }
+  const syncModalLock = () => {
+    document.body.classList.toggle("modal-open", photoModal.classList.contains("show"));
+  };
+  new MutationObserver(syncModalLock).observe(photoModal, { attributes: true, attributeFilter: ["class"] });
+  syncModalLock();
 
   /* ---------------- 图片失败自动重试（别让一张图永久空白） ---------------- */
   document.addEventListener(
