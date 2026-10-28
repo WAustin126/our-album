@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>送给你的云端相册 · FINAL</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="mobile.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="beat-flash" id="beatFlash"></div>
+  <canvas id="starCanvas" aria-hidden="true"></canvas>
+  <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+  <div class="variety-subtitle" id="subtitleBar">
+    <span class="subtitle-tag" id="subtitleTag">综艺字幕</span>
+    <span class="subtitle-text" id="subtitleText">准备拆开这份礼物。</span>
+  </div>
+
+  <div class="sfx-badge" id="sfxBadge">♪ BGM READY</div>
+
+  <div class="brand-mark" id="brandMark" title="Mango Pudding inspired mark">
+    <div class="brand-orbit"></div>
+    <div class="brand-cup">
+      <span class="brand-mango"></span>
+      <span class="brand-cream"></span>
+      <span class="brand-heart">♥</span>
+    </div>
+    <div class="brand-text">
+      <span class="brand-title">MANGO <span class="brand-heart-inline">♥</span> PUDDING</span>
+    </div>
+  </div>
+
+  <button class="sound-enable-btn" id="soundEnableBtn">启用声音</button>
+
+  <div class="lyric-overlay" id="lyricOverlay">
+    <div class="beat-bars" id="beatBars" aria-hidden="true">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </div>
+    <div class="lyric-ghost lyric-prev" id="lyricPrev"></div>
+    <strong id="lyricLine">按下音乐，让回忆跟着旋律浮起来。</strong>
+    <div class="lyric-ghost lyric-next" id="lyricNext"></div>
+    <button type="button" class="lyric-min" id="lyricMin" aria-label="收起歌词">⌄</button>
+  </div>
+
+  <main id="app">
+    <div class="cinema-vignette" id="cinemaVignette" aria-hidden="true"></div>
+    <section class="screen screen-active intro-screen" id="introScreen">
+      <div class="aurora"></div>
+      <div class="story-progress story-progress-intro" id="storyProgress">
+        <div class="story-step active" data-step="intro"><span>01</span><b>开箱礼物</b></div>
+        <div class="story-step" data-step="password"><span>02</span><b>输入密码</b></div>
+        <div class="story-step" data-step="loading"><span>03</span><b>载入回忆</b></div>
+        <div class="story-step" data-step="album"><span>04</span><b>浏览相册</b></div>
+        <div class="story-step" data-step="letter"><span>05</span><b>拆开信纸</b></div>
+      </div>
+
+      <div class="gift-ceremony-wrap">
+        <div class="gift-halo"></div>
+        <div class="gift-wrap">
+          <div class="gift-box" id="giftBox">
+            <div class="gift-lid"></div>
+            <div class="gift-ribbon-v"></div>
+            <div class="gift-ribbon-h"></div>
+            <div class="gift-body"></div>
+            <div class="gift-glow"></div>
+            <div class="gift-burst gift-burst-1"></div>
+            <div class="gift-burst gift-burst-2"></div>
+            <div class="gift-burst gift-burst-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="eyebrow">A LITTLE CLOUD ALBUM · FINAL GIFT EDITION</p>
+      <h1>送给你的<br><span>云端相册</span></h1>
+      <p class="intro-text">这次不是普通网页，是一份可以被慢慢拆开的礼物。先开箱，再看见那些被认真保存的瞬间。</p>
+      <div class="intro-action-row">
+        <button class="primary-btn" id="openGiftBtn">开始拆礼物</button>
+        <span class="intro-pill">适合手机打开 · 仪式感更满</span>
+      </div>
+    </section>
+
+    <section class="screen password-screen" id="passwordScreen">
+      <div class="glass-card password-card">
+        <p class="eyebrow">PRIVATE MEMORY</p>
+        <h2>输入我们的纪念密码</h2>
+        <p class="muted">默认密码是 <b>520</b>，你可以在 <b>app.js</b> 里改成纪念日、生日、第一次见面的日期。</p>
+        <div class="password-row">
+          <input id="passwordInput" type="password" inputmode="numeric" placeholder="" autocomplete="off" />
+          <button id="unlockBtn">进入</button>
+        </div>
+        <p class="error-text" id="passwordError"></p>
+      </div>
+    </section>
+
+    <section class="screen loading-screen" id="loadingScreen">
+      <div class="loader-orb"><span></span><span></span><span></span></div>
+      <p class="eyebrow">MEMORY ENGINE</p>
+      <h2>正在拼接这份礼物的回忆剧情</h2>
+      <div class="loading-lines" id="loadingLines"></div>
+      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    </section>
+
+    <section class="screen album-screen" id="albumScreen">
+      <div class="m-status" id="mStatus">
+        <span class="m-status-brand"><i>♥</i>MANGO PUDDING</span>
+        <span class="m-status-days"><b id="mStatusDays">0</b> 天</span>
+      </div>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LOVE ARCHIVE · FINAL</p>
+          <h2>那些值得被认真打开的瞬间</h2>
+          <div class="variety-badge">🎬 送礼剧情已进入：相册浏览阶段</div>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-btn icon-btn" id="resetDragBtn"><span>↺</span> 归位</button>
+          <button class="ghost-btn icon-btn" id="timelineBtn"><span>◌</span> 时间轴</button>
+          <button class="ghost-btn icon-btn" id="letterBtn"><span>✦</span> 信</button>
+        </div>
+      </header>
+
+      <div class="love-duration-pill" id="loveDuration" aria-live="polite">
+        <span class="love-duration-kicker">OUR LITTLE UNIVERSE</span>
+        <span class="love-duration-main">
+          我们把日子攒成星光：
+          <b data-love="days">0</b><em>天</em>
+          <b data-love="hours">00</b><em>时</em>
+          <b data-love="minutes">00</b><em>分</em>
+          <b data-love="seconds">00</b><em>秒</em>
+        </span>
+        <span class="love-duration-sub">从那一刻开始，时间也有了偏心</span>
+      </div>
+
+      <section class="album-stage" id="albumStage">
+        <div class="carousel" id="carousel"></div>
+        <div class="center-orb" id="centerOrb">
+          <span>OUR<br>MEMORY</span>
+          <small id="beatHint">BGM PULSE</small>
+        </div>
+      </section>
+
+      <section class="mobile-gallery" id="mobileGallery"></section>
+      <p class="drag-tip" id="dragTip">环绕模式可拖动旋转；切心形时会先爆散再重组；点击照片会从原位飞到中间并支持左右切换。</p>
+
+      <nav class="m-dock" id="mDock" aria-label="相册工具">
+        <button type="button" data-act="layout"><span aria-hidden="true">▦</span><em>布局</em></button>
+        <button type="button" data-act="timeline"><span aria-hidden="true">◌</span><em>时间轴</em></button>
+        <button type="button" data-act="letter"><span aria-hidden="true">✦</span><em>信</em></button>
+        <button type="button" data-act="music"><span aria-hidden="true">♪</span><em>音乐</em></button>
+      </nav>
+    </section>
+
+    <section class="panel-screen" id="timelinePanel">
+      <div class="panel glass-card timeline-roll">
+        <button class="close-btn" data-close="timelinePanel">×</button>
+        <p class="eyebrow">TIMELINE</p>
+        <h2>我们的小小时间线</h2>
+        <div class="timeline" id="timelineList"></div>
+      </div>
+    </section>
+
+    <section class="panel-screen" id="letterPanel">
+      <div class="panel glass-card letter-paper unfold-paper">
+        <button class="close-btn" data-close="letterPanel">×</button>
+        <p class="eyebrow">A LETTER FOR YOU</p>
+        <h2>写给你</h2>
+        <div class="letter-lines" id="letterTypingArea">
+          <p class="type-line" data-text="我把这些照片放进一个网页里，不是因为它们拍得多完美，而是因为每一张背后，都有一个我想认真保存的你。"></p>
+          <p class="type-line" data-text="真正想送出去的，从来不只是照片本身，而是那时候的风、光、说过的话，还有当时一起站在画面里的心情。"></p>
+          <p class="type-line" data-text="如果你喜欢，这个网页以后还可以继续长大。新的照片、新的旅行、新的小事，都能慢慢加进来。"></p>
+          <p class="type-line signature type-line-sign" data-text="故事还没写完，下一页留给我们。"></p>
+          <div class="letter-signature-stamp">For You · Mango Pudding</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="photoModal">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-card">
+      <button class="close-btn" id="modalClose">×</button>
+      <button class="modal-nav modal-prev" id="modalPrev">‹</button>
+      <button class="modal-nav modal-next" id="modalNext">›</button>
+      <div class="modal-photo-wrap">
+        <img id="modalImg" src="" alt="放大的照片" />
+        <div class="memory-sticker big-sticker" id="modalSticker">回忆标签</div>
+      </div>
+      <div class="modal-content">
+        <p class="modal-date" id="modalDate"></p>
+        <h3 id="modalTitle"></h3>
+        <p id="modalDesc"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-sheet" id="mSheet" aria-hidden="true">
+    <div class="m-sheet-backdrop" data-close-sheet></div>
+    <div class="m-sheet-card" role="dialog" aria-label="选择相册排布">
+      <p class="m-sheet-title">选择相册的样子</p>
+      <div class="m-modes">
+        <button type="button" data-mode="carousel"><span aria-hidden="true">◯</span>环绕</button>
+        <button type="button" data-mode="heart"><span aria-hidden="true">♥</span>双心</button>
+        <button type="button" data-mode="grid"><span aria-hidden="true">▦</span>平铺</button>
+        <button type="button" data-mode="galaxy"><span aria-hidden="true">✺</span>银河</button>
+        <button type="button" data-mode="film"><span aria-hidden="true">▤</span>胶片</button>
+        <button type="button" data-mode="focus"><span aria-hidden="true">◎</span>聚焦</button>
+      </div>
+      <button type="button" class="m-sheet-close" data-close-sheet>收起</button>
+    </div>
+  </div>
+
+  <audio id="bgm" loop preload="none"></audio>
+  <script src="lyrics.js"></script>
+  <script src="app.js"></script>
+  <script src="mobile-shell.js"></script>
+</body>
+</html>
